@@ -1,17 +1,19 @@
 :root {
   color-scheme: light;
-  --bg: #f5f7fa;
+  --bg: #eef2f5;
   --surface: #ffffff;
-  --surface-strong: #fdfdfb;
-  --ink: #1e252b;
-  --muted: #68747f;
-  --line: #dce3ea;
-  --teal: #17766b;
-  --teal-dark: #115c54;
-  --coral: #d95f59;
-  --gold: #d69d2f;
-  --blue: #415f91;
-  --shadow: 0 18px 45px rgba(30, 37, 43, 0.08);
+  --surface-strong: #f8faf9;
+  --ink: #162126;
+  --muted: #667481;
+  --line: #d7e0e5;
+  --teal: #147a72;
+  --teal-dark: #0d5551;
+  --coral: #c95849;
+  --gold: #b9893e;
+  --blue: #355f7f;
+  --charcoal: #22313a;
+  --shadow: 0 22px 70px rgba(22, 33, 38, 0.1);
+  --shadow-soft: 0 12px 34px rgba(22, 33, 38, 0.07);
 }
 
 * {
@@ -22,7 +24,8 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(23, 118, 107, 0.08), transparent 280px),
+    linear-gradient(135deg, rgba(20, 122, 114, 0.09), transparent 42%),
+    linear-gradient(180deg, #f8faf9 0, var(--bg) 360px),
     var(--bg);
   color: var(--ink);
   font-family:
@@ -37,6 +40,15 @@ input {
 
 button {
   cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+button:active {
+  transform: translateY(1px);
 }
 
 input[type="number"] {
@@ -52,9 +64,9 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .app-shell {
-  width: min(1160px, calc(100% - 32px));
+  width: min(1220px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 28px 0 42px;
+  padding: 34px 0 52px;
 }
 
 .app-header {
@@ -68,8 +80,9 @@ input[type="number"]::-webkit-inner-spin-button {
 .eyebrow {
   margin: 0 0 6px;
   color: var(--teal);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 h1,
@@ -92,6 +105,13 @@ h2 {
   letter-spacing: 0;
 }
 
+h3 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
 .current-time {
   margin-bottom: 0;
   color: var(--muted);
@@ -104,7 +124,7 @@ h2 {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .month-box label,
@@ -132,10 +152,12 @@ h2 {
   grid-template-columns: minmax(0, 1fr) minmax(280px, 470px);
   gap: 20px;
   align-items: center;
-  padding: 22px;
+  padding: 26px;
   margin-bottom: 20px;
   color: #fff;
-  background: linear-gradient(135deg, var(--teal-dark), var(--teal) 58%, var(--blue));
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.11), transparent 34%),
+    linear-gradient(135deg, var(--charcoal), var(--teal-dark) 48%, var(--blue));
   border-radius: 8px;
   box-shadow: var(--shadow);
 }
@@ -191,12 +213,12 @@ h2 {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 20px;
-  box-shadow: var(--shadow);
+  padding: 22px;
+  box-shadow: var(--shadow-soft);
 }
 
 .history-panel {
-  grid-row: span 2;
+  grid-column: 1 / -1;
 }
 
 .section-heading {
@@ -237,6 +259,13 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface-strong);
+}
+
+.field-card:focus-within,
+.week-card:focus-within,
+.month-box:focus-within {
+  border-color: rgba(20, 122, 114, 0.45);
+  box-shadow: 0 0 0 4px rgba(20, 122, 114, 0.08);
 }
 
 .field-card input,
@@ -288,7 +317,7 @@ h2 {
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface-strong);
   color: var(--ink);
   font-weight: 700;
 }
@@ -308,8 +337,9 @@ h2 {
 
 .calendar-cell.today {
   color: #fff;
-  background: var(--coral);
-  border-color: var(--coral);
+  background: linear-gradient(135deg, var(--coral), var(--gold));
+  border-color: transparent;
+  box-shadow: 0 10px 22px rgba(201, 88, 73, 0.23);
 }
 
 .auth-row {
@@ -344,7 +374,8 @@ h2 {
 .auth-row button,
 .primary-button {
   color: #fff;
-  background: var(--teal);
+  background: var(--teal-dark);
+  box-shadow: 0 10px 22px rgba(13, 85, 81, 0.18);
 }
 
 .auth-row button:hover,
@@ -382,6 +413,118 @@ h2 {
   color: var(--coral);
 }
 
+.history-chart {
+  margin: 8px 0 16px;
+}
+
+.chart-empty,
+.chart-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(20, 122, 114, 0.06), transparent 58%),
+    var(--surface-strong);
+}
+
+.chart-empty {
+  display: grid;
+  gap: 6px;
+  padding: 22px;
+  color: var(--muted);
+}
+
+.chart-empty strong {
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.chart-panel {
+  padding: 20px;
+  overflow: hidden;
+}
+
+.chart-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.chart-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.chart-stats span {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.chart-stats small {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.chart-stats b {
+  color: var(--ink);
+  font-size: 20px;
+  white-space: nowrap;
+}
+
+.chart-canvas {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.chart-canvas svg {
+  display: block;
+  min-width: 760px;
+  width: 100%;
+}
+
+.chart-grid-line {
+  stroke: rgba(102, 116, 129, 0.2);
+  stroke-width: 1;
+}
+
+.chart-axis-label {
+  fill: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chart-area {
+  fill: url("#salaryArea");
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--teal);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 5;
+}
+
+.chart-dot {
+  fill: #fff;
+  stroke: var(--coral);
+  stroke-width: 4;
+}
+
+.chart-value {
+  fill: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
 .history-list {
   margin-top: 6px;
 }
@@ -400,7 +543,7 @@ h2 {
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface-strong);
+  background: #fff;
 }
 
 .history-table {
@@ -420,7 +563,7 @@ h2 {
 
 .history-table th {
   color: var(--muted);
-  background: #f3f7f6;
+  background: #f2f6f6;
   font-size: 12px;
   font-weight: 800;
 }
@@ -458,6 +601,11 @@ h2 {
   color: var(--coral);
 }
 
+.history-actions button:hover {
+  border-color: rgba(20, 122, 114, 0.3);
+  background: var(--surface-strong);
+}
+
 @media (max-width: 860px) {
   .app-shell {
     width: min(100% - 22px, 680px);
@@ -478,8 +626,13 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .chart-head,
   .field-grid,
   .auth-row {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-stats {
     grid-template-columns: 1fr;
   }
 
@@ -508,9 +661,5 @@ h2 {
   .action-row,
   .history-actions {
     flex-direction: column;
-  }
-
-  .history-item {
-    grid-template-columns: 1fr;
   }
 }

@@ -40,6 +40,7 @@ const el = {
   saveRecord: document.querySelector("#saveRecord"),
   resetForm: document.querySelector("#resetForm"),
   historyStatus: document.querySelector("#historyStatus"),
+  historyChart: document.querySelector("#historyChart"),
   historyList: document.querySelector("#historyList"),
 };
 
@@ -329,18 +330,148 @@ async function historyRequest(method, payload, query = "") {
   return fetchJson(`${API.history}${query}`, options);
 }
 
+function getRecordMetrics(record) {
+  const totals = record.totals || {};
+  const studentsByWeek = record.studentsByWeek || [];
+  const totalStudents =
+    totals.totalStudents ?? studentsByWeek.reduce((sum, count) => sum + toInt(count), 0);
+  const rates = { ...RATES, ...(record.rates || {}) };
+  const trainingTotal = totals.trainingTotal ?? toInt(record.trainingDays) * rates.trainingDay;
+  const lessonTotal = totals.lessonTotal ?? toInt(record.lessonCount) * rates.lesson;
+  const studentTotal = totals.studentTotal ?? totalStudents * rates.student;
+  const totalSalary = totals.totalSalary ?? trainingTotal + lessonTotal + studentTotal;
+
+  return {
+    totalStudents,
+    trainingTotal,
+    lessonTotal,
+    studentTotal,
+    totalSalary,
+  };
+}
+
+function sortRecordsByMonth(records) {
+  return [...records].sort((a, b) => String(a.month).localeCompare(String(b.month)));
+}
+
+function formatShortMonth(monthValue) {
+  const { year, month } = monthParts(monthValue);
+  return month === 1 ? `${year}年1月` : `${month}月`;
+}
+
+function renderHistoryChart(records) {
+  if (!records.length) {
+    el.historyChart.innerHTML = `
+      <div class="chart-empty">
+        <strong>暂无工资走势</strong>
+        <span>等待历史数据</span>
+      </div>
+    `;
+    return;
+  }
+
+  const chartRecords = sortRecordsByMonth(records).slice(-12);
+  const values = chartRecords.map((record) => getRecordMetrics(record).totalSalary);
+  const latestRecord = chartRecords[chartRecords.length - 1];
+  const latestTotal = values[values.length - 1] || 0;
+  const highestTotal = Math.max(...values, 0);
+  const highestIndex = values.indexOf(highestTotal);
+  const latestIndex = values.length - 1;
+  const averageTotal = values.reduce((sum, value) => sum + value, 0) / values.length || 0;
+  const maxValue = Math.max(highestTotal, 1);
+  const width = 960;
+  const height = 340;
+  const top = 34;
+  const right = 36;
+  const bottom = 68;
+  const left = 64;
+  const chartWidth = width - left - right;
+  const chartHeight = height - top - bottom;
+  const chartBottom = height - bottom;
+  const xStep = chartRecords.length > 1 ? chartWidth / (chartRecords.length - 1) : 0;
+  const yFor = (value) => chartBottom - (value / maxValue) * chartHeight;
+
+  const points = chartRecords.map((record, index) => {
+    const x = chartRecords.length === 1 ? left + chartWidth / 2 : left + index * xStep;
+    const y = yFor(getRecordMetrics(record).totalSalary);
+    return { x, y, record };
+  });
+
+  const linePath =
+    points.length === 1
+      ? `M ${points[0].x - 18} ${points[0].y} L ${points[0].x + 18} ${points[0].y}`
+      : points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${chartBottom} L ${points[0].x} ${chartBottom} Z`;
+  const gridLines = [0.25, 0.5, 0.75, 1]
+    .map((ratio) => {
+      const y = chartBottom - ratio * chartHeight;
+      const label = formatMoney(maxValue * ratio);
+      return `
+        <g>
+          <line x1="${left}" y1="${y}" x2="${width - right}" y2="${y}" class="chart-grid-line"></line>
+          <text x="${left - 12}" y="${y + 4}" class="chart-axis-label" text-anchor="end">${label}</text>
+        </g>
+      `;
+    })
+    .join("");
+  const dots = points
+    .map((point, index) => {
+      const total = getRecordMetrics(point.record).totalSalary;
+      const showValue = index === latestIndex || index === highestIndex || points.length === 1;
+      return `
+        <g>
+          <circle cx="${point.x}" cy="${point.y}" r="5" class="chart-dot"></circle>
+          ${
+            showValue
+              ? `<text x="${point.x}" y="${point.y - 12}" class="chart-value" text-anchor="middle">${formatMoney(total)}</text>`
+              : ""
+          }
+          <text x="${point.x}" y="${chartBottom + 28}" class="chart-axis-label" text-anchor="middle">${formatShortMonth(point.record.month)}</text>
+        </g>
+      `;
+    })
+    .join("");
+
+  el.historyChart.innerHTML = `
+    <section class="chart-panel" aria-label="每月工资走势">
+      <div class="chart-head">
+        <div>
+          <p class="eyebrow">工资走势</p>
+          <h3>每月总工资折线图</h3>
+        </div>
+        <div class="chart-stats" aria-label="工资统计摘要">
+          <span><small>最新</small><b>${formatMoney(latestTotal)}</b></span>
+          <span><small>最高</small><b>${formatMoney(highestTotal)}</b></span>
+          <span><small>平均</small><b>${formatMoney(averageTotal)}</b></span>
+        </div>
+      </div>
+      <div class="chart-canvas">
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${formatMonthLabel(latestRecord.month)}工资${formatMoney(latestTotal)}">
+          <defs>
+            <linearGradient id="salaryArea" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#147a72" stop-opacity="0.26"></stop>
+              <stop offset="100%" stop-color="#147a72" stop-opacity="0.02"></stop>
+            </linearGradient>
+          </defs>
+          ${gridLines}
+          <path d="${areaPath}" class="chart-area"></path>
+          <path d="${linePath}" class="chart-line"></path>
+          ${dots}
+        </svg>
+      </div>
+    </section>
+  `;
+}
+
 function renderHistoryList(records) {
   if (!records.length) {
-    el.historyList.innerHTML = '<p class="history-empty">连接成功，还没有保存过月份。</p>';
+    el.historyList.innerHTML = '<p class="history-empty">暂无历史工资数据。</p>';
     return;
   }
 
   const rows = records
     .map((record) => {
-      const totals = record.totals || {};
-      const totalStudents =
-        totals.totalStudents ??
-        (record.studentsByWeek || []).reduce((sum, count) => sum + toInt(count), 0);
+      const totals = getRecordMetrics(record);
       const updated = record.updatedAt ? new Date(record.updatedAt) : null;
       const updatedText = updated ? dateTimeFormatter.format(updated) : "未记录";
       return `
@@ -350,7 +481,7 @@ function renderHistoryList(records) {
           <td>${formatMoney(totals.trainingTotal || 0)}</td>
           <td>${formatMoney(totals.lessonTotal || 0)}</td>
           <td>${formatMoney(totals.studentTotal || 0)}</td>
-          <td>${totalStudents} 人</td>
+          <td>${totals.totalStudents} 人</td>
           <td>${updatedText}</td>
           <td>
             <div class="history-actions">
@@ -384,10 +515,15 @@ function renderHistoryList(records) {
   `;
 }
 
+function renderHistory(records) {
+  renderHistoryChart(records);
+  renderHistoryList(records);
+}
+
 async function loadHistory() {
   const data = await historyRequest("GET");
   state.historyRecords = data.records || [];
-  renderHistoryList(state.historyRecords);
+  renderHistory(state.historyRecords);
   persistPasswordPreference();
   setStatus("历史记录已连接。", "good");
 }
@@ -396,7 +532,7 @@ async function saveCurrentRecord() {
   const record = buildRecord();
   const data = await historyRequest("POST", record);
   state.historyRecords = data.records || [];
-  renderHistoryList(state.historyRecords);
+  renderHistory(state.historyRecords);
   persistPasswordPreference();
   setStatus(`${formatMonthLabel(record.month)} 已保存。`, "good");
 }
@@ -404,7 +540,7 @@ async function saveCurrentRecord() {
 async function deleteRecord(month) {
   const data = await historyRequest("DELETE", null, `?month=${encodeURIComponent(month)}`);
   state.historyRecords = data.records || [];
-  renderHistoryList(state.historyRecords);
+  renderHistory(state.historyRecords);
   setStatus(`${formatMonthLabel(month)} 已删除。`, "good");
 }
 
