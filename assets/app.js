@@ -331,29 +331,57 @@ async function historyRequest(method, payload, query = "") {
 
 function renderHistoryList(records) {
   if (!records.length) {
-    el.historyList.innerHTML = '<p class="status-text">还没有保存过月份。</p>';
+    el.historyList.innerHTML = '<p class="history-empty">连接成功，还没有保存过月份。</p>';
     return;
   }
 
-  el.historyList.innerHTML = records
+  const rows = records
     .map((record) => {
-      const total = record.totals?.totalSalary || 0;
+      const totals = record.totals || {};
+      const totalStudents =
+        totals.totalStudents ??
+        (record.studentsByWeek || []).reduce((sum, count) => sum + toInt(count), 0);
       const updated = record.updatedAt ? new Date(record.updatedAt) : null;
-      const updatedText = updated ? dateTimeFormatter.format(updated) : "未记录更新时间";
+      const updatedText = updated ? dateTimeFormatter.format(updated) : "未记录";
       return `
-        <article class="history-item">
-          <div>
-            <strong>${formatMonthLabel(record.month)} · ${formatMoney(total)}</strong>
-            <span>${updatedText}</span>
-          </div>
-          <div class="history-actions">
-            <button type="button" data-action="load" data-month="${record.month}">载入</button>
-            <button type="button" data-action="delete" data-month="${record.month}">删除</button>
-          </div>
-        </article>
+        <tr>
+          <td class="history-month">${formatMonthLabel(record.month)}</td>
+          <td class="history-money">${formatMoney(totals.totalSalary || 0)}</td>
+          <td>${formatMoney(totals.trainingTotal || 0)}</td>
+          <td>${formatMoney(totals.lessonTotal || 0)}</td>
+          <td>${formatMoney(totals.studentTotal || 0)}</td>
+          <td>${totalStudents} 人</td>
+          <td>${updatedText}</td>
+          <td>
+            <div class="history-actions">
+              <button type="button" data-action="load" data-month="${record.month}">载入</button>
+              <button type="button" data-action="delete" data-month="${record.month}">删除</button>
+            </div>
+          </td>
+        </tr>
       `;
     })
     .join("");
+
+  el.historyList.innerHTML = `
+    <div class="history-table-wrap">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th scope="col">月份</th>
+            <th scope="col">总工资</th>
+            <th scope="col">培训费</th>
+            <th scope="col">课时费</th>
+            <th scope="col">学生费</th>
+            <th scope="col">学生数</th>
+            <th scope="col">更新时间</th>
+            <th scope="col">操作</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
 }
 
 async function loadHistory() {
