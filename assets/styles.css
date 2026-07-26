@@ -282,6 +282,18 @@ h3 {
   font-weight: 800;
 }
 
+.fixed-pay strong {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  border-bottom: 2px solid var(--line);
+  padding: 7px 0 9px;
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
 .field-card input:focus,
 .week-card input:focus,
 .month-box input:focus,

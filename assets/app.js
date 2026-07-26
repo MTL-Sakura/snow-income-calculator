@@ -1,7 +1,7 @@
 const RATES = {
-  trainingDay: 100,
+  baseSalary: 3500,
   lesson: 150,
-  student: 15,
+  student: 11,
 };
 
 const API = {
@@ -30,7 +30,7 @@ const el = {
   lessonTotal: document.querySelector("#lessonTotal"),
   studentTotal: document.querySelector("#studentTotal"),
   studentCountText: document.querySelector("#studentCountText"),
-  trainingDays: document.querySelector("#trainingDays"),
+  baseSalaryDisplay: document.querySelector("#baseSalaryDisplay"),
   lessonCount: document.querySelector("#lessonCount"),
   weekFields: document.querySelector("#weekFields"),
   miniCalendar: document.querySelector("#miniCalendar"),
@@ -167,7 +167,7 @@ function getStudentInputs() {
 function getFormValues() {
   return {
     month: state.selectedMonth,
-    trainingDays: toInt(el.trainingDays.value),
+    baseSalary: RATES.baseSalary,
     lessonCount: toInt(el.lessonCount.value),
     studentsByWeek: getStudentInputs().map((input) => toInt(input.value)),
   };
@@ -175,7 +175,7 @@ function getFormValues() {
 
 function calculateTotals(values = getFormValues()) {
   const totalStudents = values.studentsByWeek.reduce((sum, count) => sum + count, 0);
-  const trainingTotal = values.trainingDays * RATES.trainingDay;
+  const trainingTotal = RATES.baseSalary;
   const lessonTotal = values.lessonCount * RATES.lesson;
   const studentTotal = totalStudents * RATES.student;
   return {
@@ -189,6 +189,7 @@ function calculateTotals(values = getFormValues()) {
 
 function updateTotals() {
   const totals = calculateTotals();
+  el.baseSalaryDisplay.textContent = formatMoney(RATES.baseSalary);
   el.totalSalary.textContent = formatMoney(totals.totalSalary);
   el.trainingTotal.textContent = formatMoney(totals.trainingTotal);
   el.lessonTotal.textContent = formatMoney(totals.lessonTotal);
@@ -277,7 +278,6 @@ function buildRecord() {
 function fillForm(record) {
   state.selectedMonth = record.month;
   renderMonth();
-  el.trainingDays.value = record.trainingDays || "";
   el.lessonCount.value = record.lessonCount || "";
   getStudentInputs().forEach((input, index) => {
     const value = record.studentsByWeek?.[index] || 0;
@@ -331,15 +331,33 @@ async function historyRequest(method, payload, query = "") {
 }
 
 function getRecordMetrics(record) {
-  const totals = record.totals || {};
+  if (record.totals) {
+    return {
+      totalStudents:
+        record.totals.totalStudents ??
+        (record.studentsByWeek || []).reduce((sum, count) => sum + toInt(count), 0),
+      trainingTotal: record.totals.trainingTotal || 0,
+      lessonTotal: record.totals.lessonTotal || 0,
+      studentTotal: record.totals.studentTotal || 0,
+      totalSalary: record.totals.totalSalary || 0,
+    };
+  }
+
   const studentsByWeek = record.studentsByWeek || [];
-  const totalStudents =
-    totals.totalStudents ?? studentsByWeek.reduce((sum, count) => sum + toInt(count), 0);
-  const rates = { ...RATES, ...(record.rates || {}) };
-  const trainingTotal = totals.trainingTotal ?? toInt(record.trainingDays) * rates.trainingDay;
-  const lessonTotal = totals.lessonTotal ?? toInt(record.lessonCount) * rates.lesson;
-  const studentTotal = totals.studentTotal ?? totalStudents * rates.student;
-  const totalSalary = totals.totalSalary ?? trainingTotal + lessonTotal + studentTotal;
+  const totalStudents = studentsByWeek.reduce((sum, count) => sum + toInt(count), 0);
+  const savedRates = record.rates || {};
+  const savedBaseSalary = Number(savedRates.baseSalary);
+  const savedTrainingDayRate = Number(savedRates.trainingDay);
+  const trainingTotal = Number.isFinite(savedBaseSalary)
+    ? savedBaseSalary
+    : Number.isFinite(savedTrainingDayRate)
+      ? toInt(record.trainingDays) * savedTrainingDayRate
+      : RATES.baseSalary;
+  const lessonRate = Number.isFinite(Number(savedRates.lesson)) ? Number(savedRates.lesson) : RATES.lesson;
+  const studentRate = Number.isFinite(Number(savedRates.student)) ? Number(savedRates.student) : RATES.student;
+  const lessonTotal = toInt(record.lessonCount) * lessonRate;
+  const studentTotal = totalStudents * studentRate;
+  const totalSalary = trainingTotal + lessonTotal + studentTotal;
 
   return {
     totalStudents,
@@ -501,7 +519,7 @@ function renderHistoryList(records) {
           <tr>
             <th scope="col">月份</th>
             <th scope="col">总工资</th>
-            <th scope="col">培训费</th>
+            <th scope="col">底薪/培训费</th>
             <th scope="col">课时费</th>
             <th scope="col">学生费</th>
             <th scope="col">学生数</th>
@@ -545,7 +563,6 @@ async function deleteRecord(month) {
 }
 
 function resetForm() {
-  el.trainingDays.value = "";
   el.lessonCount.value = "";
   getStudentInputs().forEach((input) => {
     input.value = "";

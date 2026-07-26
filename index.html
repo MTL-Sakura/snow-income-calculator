@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>雪儿的工资计算器</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260611-2">
-    <script defer src="assets/app.js?v=20260611-2"></script>
+    <link rel="stylesheet" href="assets/styles.css?v=20260726-1">
+    <script defer src="assets/app.js?v=20260726-1"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -27,7 +27,7 @@
           <strong id="totalSalary">¥0</strong>
         </div>
         <div class="summary-grid" aria-label="工资明细">
-          <span>培训费 <b id="trainingTotal">¥0</b></span>
+          <span>底薪 <b id="trainingTotal">¥0</b></span>
           <span>课时费 <b id="lessonTotal">¥0</b></span>
           <span>学生费 <b id="studentTotal">¥0</b></span>
         </div>
@@ -40,15 +40,15 @@
               <p class="eyebrow">收入录入</p>
               <h2 id="incomeTitle">基础工资</h2>
             </div>
-            <span class="rate-pill">100 / 150 / 15</span>
+            <span class="rate-pill">3500 / 150 / 11</span>
           </div>
 
           <div class="field-grid">
-            <label class="field-card" for="trainingDays">
-              <span>培训天数</span>
-              <input id="trainingDays" class="money-input" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
-              <small>每天 ¥100</small>
-            </label>
+            <div class="field-card fixed-pay" aria-label="每月底薪">
+              <span>每月底薪</span>
+              <strong id="baseSalaryDisplay">¥3,500</strong>
+              <small>固定底薪</small>
+            </div>
 
             <label class="field-card" for="lessonCount">
               <span>上课节数</span>

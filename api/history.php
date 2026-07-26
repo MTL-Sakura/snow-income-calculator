@@ -23,9 +23,9 @@ if (!defined('DATA_FILE')) {
 }
 
 $rates = [
-    'trainingDay' => 100,
+    'baseSalary' => 3500,
     'lesson' => 150,
-    'student' => 15,
+    'student' => 11,
 ];
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -129,16 +129,15 @@ function normalize_record(array $payload, array $rates): array
         $studentsByWeek[] = to_non_negative_int($students[$i] ?? 0, '第' . ($i + 1) . '周学生数');
     }
 
-    $trainingDays = to_non_negative_int($payload['trainingDays'] ?? 0, '培训天数');
     $lessonCount = to_non_negative_int($payload['lessonCount'] ?? 0, '上课节数');
     $totalStudents = array_sum($studentsByWeek);
-    $trainingTotal = $trainingDays * $rates['trainingDay'];
+    $trainingTotal = $rates['baseSalary'];
     $lessonTotal = $lessonCount * $rates['lesson'];
     $studentTotal = $totalStudents * $rates['student'];
 
     return [
         'month' => $month,
-        'trainingDays' => $trainingDays,
+        'baseSalary' => $rates['baseSalary'],
         'lessonCount' => $lessonCount,
         'studentsByWeek' => $studentsByWeek,
         'rates' => $rates,
