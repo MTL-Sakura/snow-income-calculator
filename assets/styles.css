@@ -34,8 +34,13 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
+}
+
+textarea {
+  resize: vertical;
 }
 
 button {
@@ -64,7 +69,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .app-shell {
-  width: min(1220px, calc(100% - 32px));
+  width: min(1320px, calc(100% - 32px));
   margin: 0 auto;
   padding: 34px 0 52px;
 }
@@ -149,7 +154,7 @@ h3 {
 
 .summary-band {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 470px);
+  grid-template-columns: minmax(320px, 0.8fr) minmax(560px, 1.2fr);
   gap: 20px;
   align-items: center;
   padding: 26px;
@@ -178,7 +183,7 @@ h3 {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -200,6 +205,11 @@ h3 {
   white-space: nowrap;
 }
 
+.summary-grid .take-home-summary {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
 .workspace-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
@@ -208,6 +218,7 @@ h3 {
 }
 
 .tool-panel,
+.tax-panel,
 .calendar-panel,
 .history-panel {
   background: var(--surface);
@@ -306,6 +317,176 @@ h3 {
 .field-card small,
 .week-card small {
   color: var(--muted);
+}
+
+.note-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.note-field span,
+.rule-grid span,
+.tax-input-grid span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.note-field textarea,
+.rule-grid input,
+.tax-input-grid input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: var(--ink);
+  background: #fff;
+}
+
+.note-field textarea:focus,
+.rule-grid input:focus,
+.tax-input-grid input:focus {
+  outline: 3px solid rgba(23, 118, 107, 0.18);
+  outline-offset: 2px;
+  border-color: var(--teal);
+}
+
+.settings-panel {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.settings-panel summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+}
+
+.settings-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-panel summary::after {
+  content: "+";
+  display: grid;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--teal-dark);
+  background: #fff;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.settings-panel[open] summary::after {
+  content: "−";
+}
+
+.settings-panel summary small {
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.rule-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 14px;
+}
+
+.rule-grid label,
+.tax-input-grid label {
+  display: grid;
+  gap: 7px;
+}
+
+.secondary-button {
+  height: 44px;
+  border: 1px solid rgba(20, 122, 114, 0.32);
+  border-radius: 8px;
+  padding: 0 16px;
+  color: var(--teal-dark);
+  background: rgba(20, 122, 114, 0.08);
+  font-weight: 800;
+}
+
+.secondary-button:hover {
+  background: rgba(20, 122, 114, 0.14);
+}
+
+.inline-status {
+  min-height: 20px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.inline-status.is-good {
+  color: var(--teal-dark);
+}
+
+.inline-status.is-warn {
+  color: var(--coral);
+}
+
+.tax-input-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tax-result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--line);
+}
+
+.tax-result-grid span {
+  min-width: 0;
+  padding: 13px;
+  color: var(--muted);
+  background: var(--surface-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tax-result-grid b {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 19px;
+  white-space: nowrap;
+}
+
+.tax-result-grid span:last-child b {
+  color: var(--teal-dark);
+}
+
+.tax-context {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tax-context.is-warn {
+  color: var(--coral);
 }
 
 .week-card header {
@@ -457,7 +638,7 @@ h3 {
 
 .chart-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
+  grid-template-columns: minmax(0, 1fr) minmax(520px, 0.9fr);
   gap: 16px;
   align-items: start;
   margin-bottom: 14px;
@@ -465,7 +646,7 @@ h3 {
 
 .chart-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -489,6 +670,43 @@ h3 {
   color: var(--ink);
   font-size: 20px;
   white-space: nowrap;
+}
+
+.chart-stats b.is-positive {
+  color: var(--teal-dark);
+}
+
+.chart-stats b.is-negative {
+  color: var(--coral);
+}
+
+.chart-stats b.is-neutral {
+  color: var(--muted);
+}
+
+.chart-range {
+  display: inline-flex;
+  margin-top: 14px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.chart-range button {
+  min-width: 66px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.chart-range button.is-active {
+  color: #fff;
+  background: var(--teal-dark);
 }
 
 .chart-canvas {
@@ -537,6 +755,18 @@ h3 {
   font-weight: 800;
 }
 
+.chart-average-line {
+  stroke: rgba(53, 95, 127, 0.58);
+  stroke-width: 1.5;
+  stroke-dasharray: 7 6;
+}
+
+.chart-average-label {
+  fill: var(--blue);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .history-list {
   margin-top: 6px;
 }
@@ -560,7 +790,7 @@ h3 {
 
 .history-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 1260px;
   border-collapse: collapse;
   font-size: 14px;
 }
@@ -588,6 +818,17 @@ h3 {
 .history-money {
   color: var(--ink);
   font-weight: 800;
+}
+
+.history-take-home {
+  color: var(--teal-dark);
+  font-weight: 800;
+}
+
+.history-note {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .history-money {
@@ -618,6 +859,71 @@ h3 {
   background: var(--surface-strong);
 }
 
+.confirm-dialog {
+  width: min(440px, calc(100% - 32px));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0;
+  color: var(--ink);
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(22, 33, 38, 0.58);
+}
+
+.confirm-dialog form {
+  padding: 24px;
+}
+
+.dialog-message {
+  margin: 12px 0 20px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dialog-actions button {
+  height: 42px;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-weight: 800;
+}
+
+.dialog-actions .ghost-button {
+  border: 0;
+}
+
+.danger-button {
+  border: 0;
+  color: #fff;
+  background: var(--coral);
+}
+
+.danger-button:hover {
+  background: #ad463b;
+}
+
+@media (max-width: 1080px) {
+  .summary-band {
+    grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .chart-head {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 860px) {
   .app-shell {
     width: min(100% - 22px, 680px);
@@ -635,17 +941,19 @@ h3 {
   }
 
   .summary-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .chart-head,
   .field-grid,
-  .auth-row {
+  .auth-row,
+  .rule-grid,
+  .tax-input-grid {
     grid-template-columns: 1fr;
   }
 
   .chart-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .remember-row {
@@ -671,7 +979,25 @@ h3 {
   }
 
   .action-row,
-  .history-actions {
+  .history-actions,
+  .dialog-actions {
     flex-direction: column;
+  }
+
+  .summary-grid,
+  .chart-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-grid .take-home-summary {
+    grid-column: 1 / -1;
+  }
+
+  .tax-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-panel summary small {
+    display: none;
   }
 }

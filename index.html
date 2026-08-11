@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>雪儿的工资计算器</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260726-1">
-    <script defer src="assets/app.js?v=20260726-1"></script>
+    <link rel="stylesheet" href="assets/styles.css?v=20260811-1">
+    <script defer src="assets/app.js?v=20260811-1"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -23,13 +23,15 @@
 
       <section class="summary-band" aria-labelledby="totalTitle">
         <div>
-          <p id="totalTitle" class="summary-label">本月工资</p>
+          <p id="totalTitle" class="summary-label">本月税前工资</p>
           <strong id="totalSalary">¥0</strong>
         </div>
         <div class="summary-grid" aria-label="工资明细">
           <span>底薪 <b id="trainingTotal">¥0</b></span>
           <span>课时费 <b id="lessonTotal">¥0</b></span>
           <span>学生费 <b id="studentTotal">¥0</b></span>
+          <span>预估个税 <b id="taxTotal">¥0</b></span>
+          <span class="take-home-summary">预计到手 <b id="takeHomeTotal">¥0</b></span>
         </div>
       </section>
 
@@ -40,7 +42,7 @@
               <p class="eyebrow">收入录入</p>
               <h2 id="incomeTitle">基础工资</h2>
             </div>
-            <span class="rate-pill">3500 / 150 / 11</span>
+            <span id="rateSummary" class="rate-pill">3500 / 150 / 11</span>
           </div>
 
           <div class="field-grid">
@@ -53,9 +55,37 @@
             <label class="field-card" for="lessonCount">
               <span>上课节数</span>
               <input id="lessonCount" class="money-input" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
-              <small>每节 ¥150</small>
+              <small id="lessonRateHint">每节 ¥150</small>
             </label>
           </div>
+
+          <label class="note-field" for="salaryNote">
+            <span>本月备注</span>
+            <textarea id="salaryNote" maxlength="500" rows="3" placeholder="例如：补课、请假或奖金说明"></textarea>
+          </label>
+
+          <details class="settings-panel">
+            <summary>
+              <span>工资规则设置</span>
+              <small>底薪、课时费、学生费</small>
+            </summary>
+            <div class="rule-grid">
+              <label for="baseSalaryRate">
+                <span>月底薪</span>
+                <input id="baseSalaryRate" class="rate-input" type="number" min="0" step="1" inputmode="decimal">
+              </label>
+              <label for="lessonRate">
+                <span>每节课</span>
+                <input id="lessonRate" class="rate-input" type="number" min="0" step="1" inputmode="decimal">
+              </label>
+              <label for="studentRate">
+                <span>每个学生</span>
+                <input id="studentRate" class="rate-input" type="number" min="0" step="1" inputmode="decimal">
+              </label>
+              <button id="saveRates" class="secondary-button" type="button">保存规则</button>
+            </div>
+            <p id="rateStatus" class="inline-status" role="status">当前规则保存在本机，连接后可同步到服务器。</p>
+          </details>
         </section>
 
         <section class="tool-panel" aria-labelledby="studentTitle">
@@ -68,6 +98,42 @@
           </div>
 
           <div id="weekFields" class="week-grid" aria-label="每周学生人数"></div>
+        </section>
+
+        <section class="tax-panel" aria-labelledby="taxTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">税后预估</p>
+              <h2 id="taxTitle">个人所得税</h2>
+            </div>
+            <span class="rate-pill">累计预扣法</span>
+          </div>
+
+          <div class="tax-input-grid">
+            <label for="socialInsurance">
+              <span>社保公积金</span>
+              <input id="socialInsurance" class="tax-input" type="number" min="0" step="1" inputmode="decimal" placeholder="0">
+            </label>
+            <label for="specialDeduction">
+              <span>专项附加扣除</span>
+              <input id="specialDeduction" class="tax-input" type="number" min="0" step="1" inputmode="decimal" placeholder="0">
+            </label>
+            <label for="otherDeduction">
+              <span>其他依法扣除</span>
+              <input id="otherDeduction" class="tax-input" type="number" min="0" step="1" inputmode="decimal" placeholder="0">
+            </label>
+            <label for="employmentMonths">
+              <span>本年任职月数</span>
+              <input id="employmentMonths" class="tax-input" type="number" min="1" max="12" step="1" inputmode="numeric">
+            </label>
+          </div>
+
+          <div class="tax-result-grid" aria-label="个税预估结果">
+            <span>累计应纳税所得额 <b id="cumulativeTaxable">¥0</b></span>
+            <span>本月预估个税 <b id="currentTax">¥0</b></span>
+            <span>本月预计到手 <b id="takeHomeSalary">¥0</b></span>
+          </div>
+          <p id="taxContext" class="tax-context">按居民个人工资薪金累计预扣法估算。</p>
         </section>
 
         <section class="calendar-panel" aria-labelledby="calendarTitle">
@@ -110,5 +176,17 @@
         </section>
       </div>
     </main>
+
+    <dialog id="overwriteDialog" class="confirm-dialog">
+      <form method="dialog">
+        <p class="eyebrow">同月记录已存在</p>
+        <h2>确认覆盖历史工资？</h2>
+        <p id="overwriteMessage" class="dialog-message"></p>
+        <div class="dialog-actions">
+          <button class="ghost-button" type="submit" value="cancel">取消</button>
+          <button class="danger-button" type="submit" value="confirm">确认覆盖</button>
+        </div>
+      </form>
+    </dialog>
   </body>
 </html>
