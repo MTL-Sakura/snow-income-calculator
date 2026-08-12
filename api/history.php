@@ -247,9 +247,10 @@ function calculate_tax($taxInput, string $month, float $totalSalary, array $reco
         $taxInput = [];
     }
     $calendarMonth = (int) substr($month, 5, 2);
-    $employmentMonths = to_non_negative_int($taxInput['employmentMonths'] ?? $calendarMonth, '本年任职月数');
+    $startMonth = normalize_tax_start_month($taxInput['startMonth'] ?? '', $month);
+    $employmentMonths = to_non_negative_int($taxInput['employmentMonths'] ?? $calendarMonth, '累计减除月份数');
     if ($employmentMonths < 1 || $employmentMonths > 12) {
-        respond(['ok' => false, 'error' => '本年任职月数必须在 1 到 12 之间'], 400);
+        respond(['ok' => false, 'error' => '累计减除月份数必须在 1 到 12 之间'], 400);
     }
 
     $socialInsurance = to_non_negative_amount($taxInput['socialInsurance'] ?? 0, '社保公积金');
@@ -268,7 +269,11 @@ function calculate_tax($taxInput, string $month, float $totalSalary, array $reco
             continue;
         }
         $recordMonth = (string) ($record['month'] ?? '');
-        if (strncmp($recordMonth, $yearPrefix, 5) !== 0 || $recordMonth >= $month) {
+        if (
+            strncmp($recordMonth, $yearPrefix, 5) !== 0 ||
+            $recordMonth < $startMonth ||
+            $recordMonth >= $month
+        ) {
             continue;
         }
         $historyMonthCount += 1;
@@ -302,6 +307,7 @@ function calculate_tax($taxInput, string $month, float $totalSalary, array $reco
     return [
         'method' => 'cumulative-withholding-estimate',
         'standardDeductionPerMonth' => TAX_STANDARD_DEDUCTION,
+        'startMonth' => $startMonth,
         'employmentMonths' => $employmentMonths,
         'socialInsurance' => $socialInsurance,
         'specialAdditional' => $specialAdditional,
@@ -320,6 +326,19 @@ function calculate_tax($taxInput, string $month, float $totalSalary, array $reco
         'historyMonthCount' => $historyMonthCount,
         'missingTaxMonthCount' => $missingTaxMonthCount,
     ];
+}
+
+function normalize_tax_start_month($value, string $selectedMonth): string
+{
+    $fallback = substr($selectedMonth, 0, 4) . '-01';
+    $startMonth = trim((string) $value);
+    if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $startMonth)) {
+        return $fallback;
+    }
+    if (substr($startMonth, 0, 4) !== substr($selectedMonth, 0, 4) || $startMonth > $selectedMonth) {
+        respond(['ok' => false, 'error' => '工资薪金累计起始月必须在当前工资月份之前或相同月份'], 400);
+    }
+    return $startMonth;
 }
 
 function tax_bracket(float $taxableIncome): array

@@ -26,6 +26,7 @@ const STORAGE_KEYS = {
   remember: "wage-calculator-remember-password",
   rates: "wage-calculator-rates",
   chartRange: "wage-calculator-chart-range",
+  taxStartMonth: "wage-calculator-tax-start-month",
 };
 
 const state = {
@@ -63,6 +64,7 @@ const el = {
   socialInsurance: document.querySelector("#socialInsurance"),
   specialDeduction: document.querySelector("#specialDeduction"),
   otherDeduction: document.querySelector("#otherDeduction"),
+  taxStartMonth: document.querySelector("#taxStartMonth"),
   employmentMonths: document.querySelector("#employmentMonths"),
   cumulativeTaxable: document.querySelector("#cumulativeTaxable"),
   currentTax: document.querySelector("#currentTax"),
@@ -132,6 +134,33 @@ function escapeHtml(value) {
 function monthParts(monthValue) {
   const [year, month] = String(monthValue).split("-").map(Number);
   return { year, month };
+}
+
+function normalizeTaxStartMonth(value, selectedMonth = state.selectedMonth) {
+  const selected = monthParts(selectedMonth);
+  const candidate = String(value || "");
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(candidate)) {
+    const candidateParts = monthParts(candidate);
+    if (candidateParts.year === selected.year && candidate <= selectedMonth) return candidate;
+  }
+  return `${selected.year}-01`;
+}
+
+function monthsBetween(startMonth, endMonth) {
+  const start = monthParts(startMonth);
+  const end = monthParts(endMonth);
+  return (end.year - start.year) * 12 + end.month - start.month;
+}
+
+function getPreferredTaxStartMonth() {
+  const saved = localStorage.getItem(STORAGE_KEYS.taxStartMonth);
+  return normalizeTaxStartMonth(saved, state.selectedMonth);
+}
+
+function syncTaxPeriodInputs(startMonth = getPreferredTaxStartMonth()) {
+  const normalizedStart = normalizeTaxStartMonth(startMonth, state.selectedMonth);
+  el.taxStartMonth.value = normalizedStart;
+  el.employmentMonths.value = String(clamp(monthsBetween(normalizedStart, state.selectedMonth) + 1, 1, 12));
 }
 
 function formatMonthValue(date) {
@@ -226,11 +255,13 @@ function getStudentInputs() {
 function getTaxInputValues() {
   const selectedMonthNumber = monthParts(state.selectedMonth).month || 1;
   const employmentMonths = clamp(toInt(el.employmentMonths.value) || selectedMonthNumber, 1, 12);
+  const startMonth = normalizeTaxStartMonth(el.taxStartMonth.value, state.selectedMonth);
   return {
     socialInsurance: toAmount(el.socialInsurance.value),
     specialAdditional: toAmount(el.specialDeduction.value),
     otherDeduction: toAmount(el.otherDeduction.value),
     employmentMonths,
+    startMonth,
   };
 }
 
@@ -298,15 +329,18 @@ function getTaxBracket(taxableIncome) {
   return TAX_BRACKETS.find((bracket) => taxableIncome <= bracket.ceiling) || TAX_BRACKETS[0];
 }
 
-function getPriorYearRecords(monthValue) {
+function getPriorYearRecords(monthValue, startMonth) {
   const yearPrefix = `${monthParts(monthValue).year}-`;
   return state.historyRecords.filter(
-    (record) => String(record.month).startsWith(yearPrefix) && String(record.month) < monthValue,
+    (record) =>
+      String(record.month).startsWith(yearPrefix) &&
+      String(record.month) >= startMonth &&
+      String(record.month) < monthValue,
   );
 }
 
 function calculateTax(totals = calculateTotals(), taxInput = getTaxInputValues()) {
-  const priorRecords = getPriorYearRecords(state.selectedMonth);
+  const priorRecords = getPriorYearRecords(state.selectedMonth, taxInput.startMonth);
   const previousIncome = priorRecords.reduce((sum, record) => sum + getRecordMetrics(record).totalSalary, 0);
   const previousDeductions = priorRecords.reduce((sum, record) => {
     return sum + (Number(record.tax?.deductionsTotal) || 0);
@@ -362,7 +396,7 @@ function updateTaxContext(tax) {
     el.taxContext.textContent = `已计入本年度 ${tax.historyMonthCount} 条历史收入，其中 ${tax.missingTaxMonthCount} 条没有历史扣除数据。`;
     return;
   }
-  el.taxContext.textContent = `已计入本年度 ${tax.historyMonthCount} 条历史收入，按任职 ${tax.employmentMonths} 个月累计预估。`;
+  el.taxContext.textContent = `从${formatMonthLabel(tax.startMonth)}累计，已计入 ${tax.historyMonthCount} 条历史收入，按 ${tax.employmentMonths} 个月减除费用预估。`;
 }
 
 function updateRateUi(syncInputs = false) {
@@ -407,7 +441,8 @@ function normalizeAmountInput(input) {
 }
 
 function normalizeEmploymentMonths() {
-  const fallback = monthParts(state.selectedMonth).month || 1;
+  const startMonth = normalizeTaxStartMonth(el.taxStartMonth.value, state.selectedMonth);
+  const fallback = clamp(monthsBetween(startMonth, state.selectedMonth) + 1, 1, 12);
   el.employmentMonths.value = String(clamp(toInt(el.employmentMonths.value) || fallback, 1, 12));
 }
 
@@ -464,7 +499,7 @@ function updateCurrentTimeLabel(source) {
 function renderMonth() {
   el.monthPicker.value = state.selectedMonth;
   el.monthLabel.textContent = formatMonthLabel(state.selectedMonth);
-  el.employmentMonths.value = String(monthParts(state.selectedMonth).month || 1);
+  syncTaxPeriodInputs();
   renderWeekInputs();
   renderCalendar();
   updateRateUi(true);
@@ -501,7 +536,10 @@ function fillForm(record) {
   el.socialInsurance.value = tax.socialInsurance || "";
   el.specialDeduction.value = tax.specialAdditional || "";
   el.otherDeduction.value = tax.otherDeduction || "";
-  el.employmentMonths.value = String(tax.employmentMonths || monthParts(record.month).month || 1);
+  const startMonth = normalizeTaxStartMonth(tax.startMonth || `${monthParts(record.month).year}-01`, record.month);
+  el.taxStartMonth.value = startMonth;
+  if (tax.startMonth) localStorage.setItem(STORAGE_KEYS.taxStartMonth, startMonth);
+  el.employmentMonths.value = String(tax.employmentMonths || monthsBetween(startMonth, record.month) + 1);
   updateTotals();
 }
 
@@ -842,7 +880,7 @@ function resetForm() {
   el.socialInsurance.value = "";
   el.specialDeduction.value = "";
   el.otherDeduction.value = "";
-  el.employmentMonths.value = String(monthParts(state.selectedMonth).month || 1);
+  syncTaxPeriodInputs();
   updateTotals();
 }
 
@@ -879,7 +917,13 @@ function bindEvents() {
     if (event.target.matches(".money-input")) normalizeCountInput(event.target);
     if (event.target.matches(".tax-input:not(#employmentMonths), .rate-input")) normalizeAmountInput(event.target);
     if (event.target.matches("#employmentMonths")) normalizeEmploymentMonths();
-    if (event.target.matches(".money-input, .tax-input, .rate-input")) updateTotals();
+    if (event.target.matches("#taxStartMonth")) {
+      const startMonth = normalizeTaxStartMonth(event.target.value, state.selectedMonth);
+      event.target.value = startMonth;
+      localStorage.setItem(STORAGE_KEYS.taxStartMonth, startMonth);
+      el.employmentMonths.value = String(clamp(monthsBetween(startMonth, state.selectedMonth) + 1, 1, 12));
+    }
+    if (event.target.matches(".money-input, .tax-input, .tax-start-input, .rate-input")) updateTotals();
   });
 
   el.monthPicker.addEventListener("change", () => {
