@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>雪儿的工资计算器</title>
-    <link rel="stylesheet" href="assets/styles.css?v=20260812-1">
-    <script defer src="assets/app.js?v=20260812-1"></script>
+    <link rel="stylesheet" href="assets/styles.css?v=20260812-2">
+    <script defer src="assets/app.js?v=20260812-2"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -20,6 +20,35 @@
           <input id="monthPicker" type="month">
         </div>
       </header>
+
+      <section class="career-band" aria-labelledby="careerIncomeTitle">
+        <div class="career-copy">
+          <p class="eyebrow">累计到手收入</p>
+          <h2 id="careerIncomeTitle">雪儿已经从新东方赚走 <strong id="careerTakeHome">--</strong></h2>
+          <p id="careerIncomeStatus">连接服务器历史数据后自动统计</p>
+        </div>
+        <div class="million-progress">
+          <div class="progress-heading">
+            <span>距离百万收入</span>
+            <strong id="millionProgress">--</strong>
+          </div>
+          <div
+            id="millionProgressBar"
+            class="progress-track"
+            role="progressbar"
+            aria-label="距离百万收入进度"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <span id="millionProgressFill"></span>
+          </div>
+          <div class="progress-meta">
+            <span>目标 ¥1,000,000</span>
+            <span id="millionRemaining">等待历史数据</span>
+          </div>
+        </div>
+      </section>
 
       <section class="summary-band" aria-labelledby="totalTitle">
         <div>

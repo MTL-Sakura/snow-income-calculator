@@ -5,6 +5,7 @@ const DEFAULT_RATES = Object.freeze({
 });
 
 const TAX_STANDARD_DEDUCTION = 5000;
+const MILLION_INCOME_GOAL = 1000000;
 const TAX_BRACKETS = [
   { ceiling: 36000, rate: 0.03, quickDeduction: 0 },
   { ceiling: 144000, rate: 0.1, quickDeduction: 2520 },
@@ -80,6 +81,12 @@ const el = {
   historyList: document.querySelector("#historyList"),
   overwriteDialog: document.querySelector("#overwriteDialog"),
   overwriteMessage: document.querySelector("#overwriteMessage"),
+  careerTakeHome: document.querySelector("#careerTakeHome"),
+  careerIncomeStatus: document.querySelector("#careerIncomeStatus"),
+  millionProgress: document.querySelector("#millionProgress"),
+  millionProgressBar: document.querySelector("#millionProgressBar"),
+  millionProgressFill: document.querySelector("#millionProgressFill"),
+  millionRemaining: document.querySelector("#millionRemaining"),
 };
 
 const moneyFormatter = new Intl.NumberFormat("zh-CN", {
@@ -624,6 +631,44 @@ function sortRecordsByMonth(records) {
   return [...records].sort((a, b) => String(a.month).localeCompare(String(b.month)));
 }
 
+function renderCareerProgress(records) {
+  if (!state.historyConnected) {
+    el.careerTakeHome.textContent = "--";
+    el.careerIncomeStatus.textContent = "连接服务器历史数据后自动统计";
+    el.millionProgress.textContent = "--";
+    el.millionProgressFill.style.width = "0%";
+    el.millionProgressBar.setAttribute("aria-valuenow", "0");
+    el.millionRemaining.textContent = "等待历史数据";
+    return;
+  }
+
+  const savedTakeHomes = records
+    .map((record) => Number(record.tax?.takeHome))
+    .filter((value) => Number.isFinite(value) && value >= 0);
+  const missingCount = records.length - savedTakeHomes.length;
+  const totalTakeHome = roundMoney(savedTakeHomes.reduce((sum, value) => sum + value, 0));
+  const rawProgress = (totalTakeHome / MILLION_INCOME_GOAL) * 100;
+  const displayedProgress = clamp(roundMoney(rawProgress), 0, 100);
+  const progressText = `${new Intl.NumberFormat("zh-CN", {
+    minimumFractionDigits: displayedProgress > 0 && displayedProgress < 10 ? 2 : 1,
+    maximumFractionDigits: 2,
+  }).format(displayedProgress)}%`;
+  const remaining = Math.max(0, roundMoney(MILLION_INCOME_GOAL - totalTakeHome));
+
+  el.careerTakeHome.textContent = formatMoney(totalTakeHome);
+  el.careerIncomeStatus.textContent = missingCount
+    ? `已统计 ${savedTakeHomes.length} 个月，另有 ${missingCount} 个月没有到手收入数据`
+    : `已汇总 ${savedTakeHomes.length} 个月的服务器历史记录`;
+  el.millionProgress.textContent = progressText;
+  el.millionProgressFill.style.width = `${displayedProgress}%`;
+  el.millionProgressBar.setAttribute("aria-valuenow", String(roundMoney(displayedProgress)));
+  el.millionProgressBar.setAttribute(
+    "aria-valuetext",
+    `${progressText}，累计到手${formatMoney(totalTakeHome)}`,
+  );
+  el.millionRemaining.textContent = remaining > 0 ? `还差 ${formatMoney(remaining)}` : "百万目标已达成";
+}
+
 function formatShortMonth(monthValue) {
   const { year, month } = monthParts(monthValue);
   return month === 1 ? `${year}年1月` : `${month}月`;
@@ -821,6 +866,7 @@ function renderHistoryList(records) {
 }
 
 function renderHistory(records) {
+  renderCareerProgress(records);
   renderHistoryChart(records);
   renderHistoryList(records);
 }
@@ -945,6 +991,7 @@ function bindEvents() {
       await loadHistory();
     } catch (error) {
       state.historyConnected = false;
+      renderCareerProgress(state.historyRecords);
       updateTotals();
       setStatus(error.message || "历史记录连接失败", "warn");
     }
@@ -1037,6 +1084,7 @@ async function init() {
       await loadHistory();
     } catch (error) {
       state.historyConnected = false;
+      renderCareerProgress(state.historyRecords);
       updateTotals();
       setStatus(error.message || "历史记录连接失败", "warn");
     }
